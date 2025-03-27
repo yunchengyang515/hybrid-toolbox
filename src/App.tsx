@@ -21,9 +21,9 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const showSidebar = isAuthenticated || isMockMode;
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex">
       {showSidebar && <Sidebar />}
-      <main className={`${showSidebar ? 'lg:pl-64' : ''}`}>{children}</main>
+      <main className="flex-1">{children}</main>
     </div>
   );
 };

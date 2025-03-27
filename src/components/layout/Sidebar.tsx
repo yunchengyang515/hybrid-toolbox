@@ -28,14 +28,14 @@ export function Sidebar() {
           </button>
         </SheetTrigger>
         <SheetContent side="left" className="w-64 p-0">
-          <nav className="h-full flex flex-col bg-card pt-16">
+          <nav className="h-full flex flex-col bg-card">
             <SidebarContent />
           </nav>
         </SheetContent>
       </Sheet>
 
       {/* Desktop Sidebar */}
-      <nav className="hidden lg:flex h-screen w-64 flex-col bg-card border-r">
+      <nav className="hidden lg:block w-64 border-r fixed h-full bg-card">
         <SidebarContent />
       </nav>
     </>
