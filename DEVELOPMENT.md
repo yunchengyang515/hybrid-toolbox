@@ -27,20 +27,24 @@ src/
 ### SOLID Principles Implementation
 
 1. **Single Responsibility Principle**
+
    - Each component handles one specific concern
    - Services are separated into distinct modules (auth, chat, plan)
    - UI components are decoupled from business logic
 
 2. **Open/Closed Principle**
+
    - Abstract interfaces for services allow extending functionality
    - Theme system is extensible without modifying core code
    - Message handling system can be extended with new types
 
 3. **Liskov Substitution Principle**
+
    - Components use TypeScript interfaces for consistent behavior
    - Service implementations can be swapped without breaking the app
 
 4. **Interface Segregation Principle**
+
    - Small, focused interfaces for different features
    - Components only depend on interfaces they use
 
@@ -60,10 +64,43 @@ src/
    VITE_SUPABASE_URL=your_supabase_url
    VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
    ```
-4. Start development server:
+4. Start Vite development server:
    ```bash
    npm run dev
    ```
+5. Build for production:
+   ```bash
+   npm run build
+   ```
+6. Preview production build:
+   ```bash
+   npm run preview
+   ```
+
+## Vite Configuration
+
+The project uses Vite for fast development and optimized builds. The configuration is in `vite.config.ts`:
+
+```typescript
+// Basic Vite configuration
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+  },
+  server: {
+    port: 3000,
+  },
+});
+```
+
+To customize Vite:
+
+1. Edit `vite.config.ts` to add plugins or modify settings
+2. Use environment variables in `.env` files with the `VITE_` prefix
+3. Add custom build optimizations in the build section
 
 ## Customization Guide
 
@@ -93,6 +130,7 @@ interface ChatService {
 The Retrieval-Augmented Generation system can be customized:
 
 1. Create embeddings service:
+
 ```typescript
 interface EmbeddingsService {
   generateEmbeddings(text: string): Promise<number[]>;
@@ -108,6 +146,7 @@ interface EmbeddingsService {
 To implement your own model control:
 
 1. Create an MCP service:
+
 ```typescript
 interface MCPService {
   validateResponse(response: string): Promise<boolean>;
@@ -127,6 +166,7 @@ interface MCPService {
 ## Deployment
 
 1. Configure Netlify:
+
    ```bash
    npm run netlify:dev # For local testing
    ```
@@ -138,16 +178,19 @@ interface MCPService {
 ## Best Practices
 
 1. **State Management**
+
    - Use Zustand for global state
    - Keep component state local when possible
    - Implement proper state hydration
 
 2. **Performance**
+
    - Lazy load routes and heavy components
    - Implement proper memoization
    - Use proper key props in lists
 
 3. **Security**
+
    - Implement proper CORS headers
    - Validate all user input
    - Use proper authentication checks
@@ -156,4 +199,3 @@ interface MCPService {
    - Implement proper error boundaries
    - Log errors appropriately
    - Provide user-friendly error messages
-
