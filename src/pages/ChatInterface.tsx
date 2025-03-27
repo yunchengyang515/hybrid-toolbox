@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Message } from '@/types/chat';
 import { sendChatMessage } from '@/lib/chat';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuthStore } from '@/store/auth';
 
 const INITIAL_MESSAGE: Message = {
   id: 'welcome',
@@ -18,6 +20,7 @@ export default function ChatInterface() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuthStore();
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -72,8 +75,28 @@ export default function ChatInterface() {
             {messages.map(message => (
               <div
                 key={message.id}
-                className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex items-start gap-3 ${message.type === 'user' ? 'flex-row-reverse' : ''}`}
               >
+                <Avatar className="mt-1">
+                  {message.type === 'user' ? (
+                    <>
+                      <AvatarImage
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
+                      />
+                      <AvatarFallback>
+                        {user?.name
+                          ?.split(' ')
+                          .map(n => n[0])
+                          .join('') || user?.email?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </>
+                  ) : (
+                    <>
+                      <AvatarImage src="https://api.dicebear.com/7.x/bottts/svg?seed=hybrid-toolbox" />
+                      <AvatarFallback>AI</AvatarFallback>
+                    </>
+                  )}
+                </Avatar>
                 <div
                   className={`max-w-[80%] rounded-lg p-4 ${
                     message.type === 'user'
