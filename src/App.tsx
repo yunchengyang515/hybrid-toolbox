@@ -1,18 +1,31 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useAuthStore } from './store/auth';
+import { Sidebar } from './components/layout/Sidebar';
 import LandingPage from './pages/LandingPage';
 import ChatInterface from './pages/ChatInterface';
 import PlanView from './pages/PlanView';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isMockMode } = useAuthStore();
-  
+
   if (!isAuthenticated && !isMockMode) {
     return <Navigate to="/" replace />;
   }
-  
+
   return <>{children}</>;
+};
+
+const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { isAuthenticated, isMockMode } = useAuthStore();
+  const showSidebar = isAuthenticated || isMockMode;
+
+  return (
+    <div className="min-h-screen bg-background flex">
+      {showSidebar && <Sidebar />}
+      <main className="flex-1">{children}</main>
+    </div>
+  );
 };
 
 function App() {
@@ -24,7 +37,9 @@ function App() {
           path="/chat"
           element={
             <ProtectedRoute>
-              <ChatInterface />
+              <AppLayout>
+                <ChatInterface />
+              </AppLayout>
             </ProtectedRoute>
           }
         />
@@ -32,7 +47,9 @@ function App() {
           path="/plan"
           element={
             <ProtectedRoute>
-              <PlanView />
+              <AppLayout>
+                <PlanView />
+              </AppLayout>
             </ProtectedRoute>
           }
         />

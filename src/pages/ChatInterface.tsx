@@ -4,12 +4,15 @@ import { useNavigate } from 'react-router-dom';
 import { Message } from '@/types/chat';
 import { sendChatMessage } from '@/lib/chat';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useAuthStore } from '@/store/auth';
 
 const INITIAL_MESSAGE: Message = {
   id: 'welcome',
   type: 'assistant',
-  content: "Hi! I'm your personal training assistant. Tell me about your fitness goals and experience, and I'll help create a hybrid training plan that works for you.",
-  timestamp: new Date()
+  content:
+    "Hi! I'm your personal training assistant. Tell me about your fitness goals and experience, and I'll help create a hybrid training plan that works for you.",
+  timestamp: new Date(),
 };
 
 export default function ChatInterface() {
@@ -17,6 +20,7 @@ export default function ChatInterface() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuthStore();
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -25,7 +29,7 @@ export default function ChatInterface() {
       id: Date.now().toString(),
       type: 'user',
       content: input.trim(),
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -34,14 +38,14 @@ export default function ChatInterface() {
 
     try {
       const response = await sendChatMessage(userMessage.content);
-      
+
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
         content: response.message,
-        timestamp: new Date()
+        timestamp: new Date(),
       };
-      
+
       setMessages(prev => [...prev, aiMessage]);
 
       if (response.plan) {
@@ -49,58 +53,79 @@ export default function ChatInterface() {
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        type: 'assistant',
-        content: "I apologize, but I'm having trouble processing your request. Please try again.",
-        timestamp: new Date()
-      }]);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: "I apologize, but I'm having trouble processing your request. Please try again.",
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      <div className="flex-1 overflow-y-auto p-4">
-        <div className="max-w-3xl mx-auto space-y-4">
-          {messages.map(message => (
-            <div
-              key={message.id}
-              className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+    <div className="h-screen p-4 lg:pl-64">
+      <div className="h-full max-w-4xl mx-auto bg-card rounded-lg shadow-lg flex flex-col">
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="space-y-4">
+            {messages.map(message => (
               <div
-                className={`max-w-[80%] rounded-lg p-4 ${
-                  message.type === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-card text-card-foreground shadow-sm'
-                }`}
+                key={message.id}
+                className={`flex items-start gap-3 ${message.type === 'user' ? 'flex-row-reverse' : ''}`}
               >
-                {message.content}
+                <Avatar className="mt-1">
+                  {message.type === 'user' ? (
+                    <>
+                      <AvatarImage
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
+                      />
+                      <AvatarFallback>
+                        {user?.name
+                          ?.split(' ')
+                          .map(n => n[0])
+                          .join('') || user?.email?.[0]?.toUpperCase()}
+                      </AvatarFallback>
+                    </>
+                  ) : (
+                    <>
+                      <AvatarImage src="https://api.dicebear.com/7.x/bottts/svg?seed=hybrid-toolbox" />
+                      <AvatarFallback>AI</AvatarFallback>
+                    </>
+                  )}
+                </Avatar>
+                <div
+                  className={`max-w-[80%] rounded-lg p-4 ${
+                    message.type === 'user'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  }`}
+                >
+                  {message.content}
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-      
-      <div className="border-t bg-card p-4">
-        <div className="max-w-3xl mx-auto flex gap-4">
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-            placeholder="Tell me about your fitness goals..."
-            className="flex-1 rounded-lg border border-input bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-            disabled={isLoading}
-          />
-          <Button
-            onClick={handleSend}
-            disabled={isLoading}
-            size="icon"
-          >
-            <Send className="h-5 w-5" />
-          </Button>
+
+        <div className="border-t p-4">
+          <div className="flex gap-4">
+            <input
+              type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && handleSend()}
+              placeholder="Tell me about your fitness goals..."
+              className="flex-1 rounded-lg border border-input bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              disabled={isLoading}
+            />
+            <Button onClick={handleSend} disabled={isLoading} size="icon">
+              <Send className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </div>
     </div>
