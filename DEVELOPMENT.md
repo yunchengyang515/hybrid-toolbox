@@ -6,196 +6,242 @@ Hybrid Toolbox is a React-based web application that provides personalized fitne
 
 - React with TypeScript
 - Tailwind CSS for styling
-- shadcn/ui for UI components
 - Supabase for authentication and data storage
 - Netlify Functions for serverless backend
 
-## Architecture
-
-The project follows Clean Architecture principles with a clear separation of concerns:
-
-```
-src/
-├── components/     # Reusable UI components
-├── lib/           # Core business logic and utilities
-├── pages/         # Page components and routing
-├── store/         # Global state management
-├── types/         # TypeScript type definitions
-└── config/        # Application configuration
-```
-
-### SOLID Principles Implementation
-
-1. **Single Responsibility Principle**
-
-   - Each component handles one specific concern
-   - Services are separated into distinct modules (auth, chat, plan)
-   - UI components are decoupled from business logic
-
-2. **Open/Closed Principle**
-
-   - Abstract interfaces for services allow extending functionality
-   - Theme system is extensible without modifying core code
-   - Message handling system can be extended with new types
-
-3. **Liskov Substitution Principle**
-
-   - Components use TypeScript interfaces for consistent behavior
-   - Service implementations can be swapped without breaking the app
-
-4. **Interface Segregation Principle**
-
-   - Small, focused interfaces for different features
-   - Components only depend on interfaces they use
-
-5. **Dependency Inversion Principle**
-   - High-level modules depend on abstractions
-   - Services are injected rather than directly instantiated
-
 ## Getting Started
 
-1. Clone the repository
+### Prerequisites
+
+1. Node.js 20 or higher
+2. npm 10 or higher
+3. A Supabase account
+4. A Netlify account (for deployment)
+
+### Local Development Setup
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   cd hybrid-toolbox
+   ```
+
 2. Install dependencies:
    ```bash
    npm install
    ```
+
 3. Set up environment variables:
-   ```env
-   VITE_SUPABASE_URL=your_supabase_url
-   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
-4. Start Vite development server:
+   - Copy `.env.example` to `.env`
+   - Fill in your Supabase credentials:
+     ```env
+     VITE_SUPABASE_URL=your_supabase_url
+     VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+     SUPABASE_URL=your_supabase_url
+     SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+     ```
+
+4. Start the development server:
    ```bash
    npm run dev
    ```
-5. Build for production:
-   ```bash
-   npm run build
-   ```
-6. Preview production build:
-   ```bash
-   npm run preview
-   ```
 
-## Vite Configuration
+   This will start:
+   - Vite dev server on port 5173
+   - Netlify Functions development server on port 8888
 
-The project uses Vite for fast development and optimized builds. The configuration is in `vite.config.ts`:
+### Project Structure
 
+```
+├── netlify/
+│   └── functions/        # Serverless functions
+├── src/
+│   ├── components/       # React components
+│   ├── lib/             # Core utilities and services
+│   ├── pages/           # Page components
+│   ├── store/           # Global state management
+│   └── types/           # TypeScript types
+├── supabase/
+│   └── migrations/      # Database migrations
+```
+
+## Development Workflow
+
+### Authentication Flow
+
+1. Users can sign in with Google OAuth through Supabase
+2. Authentication state is managed in `src/store/auth.ts`
+3. Protected routes redirect to login if unauthenticated
+4. Mock mode is available when Supabase credentials are not set
+
+### Database Management
+
+1. Migrations are stored in `supabase/migrations/`
+2. New migrations should be created for schema changes
+3. RLS policies are defined in migrations
+4. Local development uses Supabase project
+
+### API Development
+
+1. Netlify Functions are used for backend logic
+2. Functions are in `netlify/functions/`
+3. Each function handles CORS and authentication
+4. Local testing uses `netlify dev`
+
+### State Management
+
+1. Zustand is used for global state
+2. Authentication state in `src/store/auth.ts`
+3. Component state uses React hooks
+4. Services follow dependency injection pattern
+
+## Configuration Files
+
+### Vite Configuration (vite.config.ts)
 ```typescript
-// Basic Vite configuration
-export default defineConfig({
+{
   plugins: [react()],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(__dirname, 'src'),
     },
   },
-  server: {
-    port: 3000,
-  },
-});
-```
-
-To customize Vite:
-
-1. Edit `vite.config.ts` to add plugins or modify settings
-2. Use environment variables in `.env` files with the `VITE_` prefix
-3. Add custom build optimizations in the build section
-
-## Customization Guide
-
-### Replacing the Chat Backend
-
-The chat system is designed to be easily replaceable. To implement your own chat backend:
-
-1. Create a new service implementing the `ChatService` interface:
-
-```typescript
-interface ChatService {
-  sendMessage(message: string): Promise<ChatResponse>;
-  getCurrentPlan(userId: string): Promise<TrainingPlan>;
+  optimizeDeps: {
+    exclude: ['lucide-react'],
+  }
 }
 ```
 
-2. Update the service configuration in `src/lib/chat.ts`
+### Tailwind Configuration (tailwind.config.js)
+- Custom color scheme
+- Component class variants
+- Animation utilities
 
-### Integrating Supabase
+### TypeScript Configuration
+- Strict mode enabled
+- Path aliases configured
+- React JSX support
+- Module resolution settings
 
-1. Click "Connect to Supabase" in the top right
-2. Update authentication configuration in `src/lib/supabase.ts`
-3. Create necessary database tables using migration files
+### Netlify Configuration (netlify.toml)
+```toml
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
 
-### Implementing Your Own RAG System
-
-The Retrieval-Augmented Generation system can be customized:
-
-1. Create embeddings service:
-
-```typescript
-interface EmbeddingsService {
-  generateEmbeddings(text: string): Promise<number[]>;
-  findSimilar(embedding: number[]): Promise<string[]>;
-}
+[dev]
+  command = "npm run dev"
+  port = 8888
+  targetPort = 5173
 ```
 
-2. Implement vector storage in Supabase or alternative
-3. Update the chat service to use your RAG implementation
+## Development Commands
 
-### Adding an MCP (Model Control Protocol)
-
-To implement your own model control:
-
-1. Create an MCP service:
-
-```typescript
-interface MCPService {
-  validateResponse(response: string): Promise<boolean>;
-  enforceGuidelines(message: string): Promise<string>;
-}
-```
-
-2. Integrate with the chat service
-3. Add necessary middleware in Netlify Functions
-
-## Testing
-
-- Unit tests: `npm run test`
-- E2E tests: `npm run test:e2e`
-- Component tests: `npm run test:components`
-
-## Deployment
-
-1. Configure Netlify:
-
-   ```bash
-   npm run netlify:dev # For local testing
-   ```
-
-2. Deploy:
-   - Push to main branch for automatic deployment
-   - Manual deploy: `npm run deploy`
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm run preview`: Preview production build
+- `npm run lint`: Run ESLint
+- `npm run format`: Format with Prettier
 
 ## Best Practices
 
-1. **State Management**
+### Code Organization
+1. Follow feature-based structure
+2. Keep components small and focused
+3. Use TypeScript for type safety
+4. Implement proper error handling
 
-   - Use Zustand for global state
-   - Keep component state local when possible
-   - Implement proper state hydration
+### State Management
+1. Use Zustand for global state
+2. Keep component state local when possible
+3. Implement proper state hydration
+4. Use React Query for API state
 
-2. **Performance**
+### Performance
+1. Lazy load routes
+2. Implement proper memoization
+3. Optimize bundle size
+4. Use proper key props in lists
 
-   - Lazy load routes and heavy components
-   - Implement proper memoization
-   - Use proper key props in lists
+### Security
+1. Implement proper CORS headers
+2. Use RLS policies in Supabase
+3. Validate all user input
+4. Keep environment variables secure
 
-3. **Security**
+## Troubleshooting
 
-   - Implement proper CORS headers
-   - Validate all user input
-   - Use proper authentication checks
+### Common Issues
 
-4. **Error Handling**
-   - Implement proper error boundaries
-   - Log errors appropriately
-   - Provide user-friendly error messages
+1. **Environment Variables**
+   - Check `.env` file exists
+   - Verify Supabase credentials
+   - Restart dev server after changes
+
+2. **Authentication**
+   - Verify OAuth configuration
+   - Check redirect URLs
+   - Test in incognito mode
+
+3. **API Functions**
+   - Check CORS headers
+   - Verify function permissions
+   - Test locally with `netlify dev`
+
+4. **Database**
+   - Verify RLS policies
+   - Check migration order
+   - Test queries in Supabase dashboard
+
+### Development Tools
+
+1. **Browser Extensions**
+   - React Developer Tools
+   - Redux DevTools (for debugging)
+   - Supabase Developer Tools
+
+2. **VS Code Extensions**
+   - ESLint
+   - Prettier
+   - Tailwind CSS IntelliSense
+   - TypeScript support
+
+## Testing
+
+1. **Unit Tests**
+   - Component testing with Vitest
+   - Service layer tests
+   - Utility function tests
+
+2. **Integration Tests**
+   - API endpoint testing
+   - Authentication flow testing
+   - Database interaction tests
+
+3. **E2E Tests**
+   - User flow testing
+   - Cross-browser testing
+   - Mobile responsiveness
+
+## Deployment
+
+1. **Staging**
+   - Deploy to preview URL
+   - Run integration tests
+   - Check performance metrics
+
+2. **Production**
+   - Deploy to Netlify
+   - Monitor error rates
+   - Check analytics
+
+## Contributing
+
+1. Fork the repository
+2. Create feature branch
+3. Follow code style guidelines
+4. Submit pull request
+5. Wait for review
+
+Remember to update documentation when making significant changes to the codebase.

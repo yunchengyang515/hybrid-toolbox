@@ -10,20 +10,19 @@ export interface AuthService {
 export class SupabaseAuthService implements AuthService {
   async signIn(): Promise<User | null> {
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'google'
-        });
-        if (error) throw error;
-        return data.user;
-      } else {
-        // Mock mode
-        return { 
-          id: 'mock-id',
-          email: 'mock@example.com',
-          name: 'Mock User'
-        };
-      }
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/chat`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
+        }
+      });
+
+      if (error) throw error;
+      return data.user;
     } catch (error) {
       console.error('Error signing in:', error);
       throw error;
@@ -32,10 +31,8 @@ export class SupabaseAuthService implements AuthService {
 
   async signOut(): Promise<void> {
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
-      }
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
     } catch (error) {
       console.error('Error signing out:', error);
       throw error;
@@ -44,12 +41,13 @@ export class SupabaseAuthService implements AuthService {
 
   async getCurrentUser(): Promise<User | null> {
     try {
-      if (import.meta.env.VITE_SUPABASE_URL) {
-        const { data: { user }, error } = await supabase.auth.getUser();
-        if (error) throw error;
-        return user;
-      }
-      return null;
+      const { data: { user }, error } = await supabase.auth.getUser();
+      if (error) throw error;
+      return user ? {
+        id: user.id,
+        email: user.email || '',
+        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
+      } : null;
     } catch (error) {
       console.error('Error getting current user:', error);
       throw error;

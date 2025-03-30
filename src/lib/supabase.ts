@@ -1,25 +1,40 @@
 import { createClient } from '@supabase/supabase-js';
 
-// These values can be replaced with your Supabase project credentials
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.warn('Supabase credentials not found. Running in mock mode.');
+}
+
+export const supabase = createClient(
+  supabaseUrl || 'http://localhost:54321',
+  supabaseAnonKey || 'mock-key'
+);
 
 export async function signInWithGoogle() {
-  try {
-    if (import.meta.env.VITE_SUPABASE_URL) {
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google'
-      });
-      if (error) throw error;
-      return data;
-    } else {
-      // Mock mode - simulate successful auth
-      return { user: { id: 'mock-id', email: 'mock@example.com' } };
-    }
-  } catch (error) {
-    console.error('Error signing in with Google:', error);
-    throw error;
+  if (!supabaseUrl || !supabaseAnonKey) {
+    // Mock mode
+    return {
+      user: {
+        id: 'mock-id',
+        email: 'mock@example.com',
+        user_metadata: { full_name: 'Mock User' }
+      }
+    };
   }
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${window.location.origin}/chat`,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent'
+      }
+    }
+  });
+
+  if (error) throw error;
+  return data;
 }
