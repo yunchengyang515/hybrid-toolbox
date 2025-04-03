@@ -6,7 +6,7 @@
 [dev]
   command = "npm run dev"
   port = 5174
-  targetPort = 5174
+  targetPort = 5173
   publish = "dist"
   framework = "vite"
   autoLaunch = true
@@ -27,6 +27,3 @@
   node_bundler = "esbuild"
   external_node_modules = ["@supabase/supabase-js"]
 
-[build.environment]
-  NODE_VERSION = "20"
-  NPM_VERSION = "10"

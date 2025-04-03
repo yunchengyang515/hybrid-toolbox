@@ -2,27 +2,22 @@ import { User } from '@/types/auth';
 import { supabase } from '@/lib/supabase';
 
 export interface AuthService {
-  signIn(): Promise<User | null>;
+  signIn(): Promise<User | null | void>;
   signOut(): Promise<void>;
   getCurrentUser(): Promise<User | null>;
 }
 
 export class SupabaseAuthService implements AuthService {
-  async signIn(): Promise<User | null> {
+  async signIn(): Promise<void> {
     try {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/chat`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
+          redirectTo: `${window.location.origin}/auth/callback`,
         },
       });
-
+      console.log('Sign-in data:', data);
       if (error) throw error;
-      return data.user;
     } catch (error) {
       console.error('Error signing in:', error);
       throw error;

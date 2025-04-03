@@ -1,17 +1,17 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { signInWithGoogle } from '@/lib/supabase';
+import { SupabaseAuthService } from '@/lib/services/auth.service';
 
 export default function LoginPage() {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
+    const authService = new SupabaseAuthService();
     if (import.meta.env.VITE_SUPABASE_URL) {
       try {
-        await signInWithGoogle();
+        await authService.signIn();
       } catch (error) {
         console.error('Error signing in:', error);
       }

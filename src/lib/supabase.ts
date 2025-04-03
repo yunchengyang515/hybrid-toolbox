@@ -14,31 +14,3 @@ export const supabase = createClient(
   supabaseUrl || 'http://localhost:54321',
   supabaseAnonKey || 'mock-key'
 );
-
-export async function signInWithGoogle() {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return {
-      user: {
-        id: 'mock-id',
-        email: 'mock@example.com',
-        user_metadata: { full_name: 'Mock User' },
-      },
-    };
-  }
-
-  console.log('Signing in with Google...');
-
-  const { data, error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: `${window.location.origin}/chat`,
-      queryParams: {
-        access_type: 'offline',
-        prompt: 'consent',
-      },
-    },
-  });
-
-  if (error) throw error;
-  return data;
-}
