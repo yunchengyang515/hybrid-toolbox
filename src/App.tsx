@@ -10,11 +10,11 @@ import { supabase } from './lib/supabase';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isMockMode } = useAuthStore();
-  
+
   if (!isAuthenticated && !isMockMode) {
     return <Navigate to="/login" replace />;
   }
-  
+
   return <>{children}</>;
 };
 
@@ -35,12 +35,15 @@ function App() {
 
   useEffect(() => {
     // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         setUser({
           id: session.user.id,
           email: session.user.email || '',
-          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User'
+          name:
+            session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
         });
       } else {
         setUser(null);
@@ -53,7 +56,8 @@ function App() {
         setUser({
           id: session.user.id,
           email: session.user.email || '',
-          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User'
+          name:
+            session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
         });
       }
     });

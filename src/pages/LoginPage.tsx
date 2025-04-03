@@ -26,15 +26,10 @@ export default function LoginPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-          <CardDescription>
-            Sign in to your account to continue
-          </CardDescription>
+          <CardDescription>Sign in to your account to continue</CardDescription>
         </CardHeader>
         <CardContent>
-          <Button
-            className="w-full flex items-center justify-center gap-2"
-            onClick={handleLogin}
-          >
+          <Button className="w-full flex items-center justify-center gap-2" onClick={handleLogin}>
             <LogIn className="w-5 h-5" />
             Sign in with Google
           </Button>

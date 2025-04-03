@@ -16,9 +16,9 @@ export class SupabaseAuthService implements AuthService {
           redirectTo: `${window.location.origin}/chat`,
           queryParams: {
             access_type: 'offline',
-            prompt: 'consent'
-          }
-        }
+            prompt: 'consent',
+          },
+        },
       });
 
       if (error) throw error;
@@ -41,13 +41,18 @@ export class SupabaseAuthService implements AuthService {
 
   async getCurrentUser(): Promise<User | null> {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
       if (error) throw error;
-      return user ? {
-        id: user.id,
-        email: user.email || '',
-        name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User'
-      } : null;
+      return user
+        ? {
+            id: user.id,
+            email: user.email || '',
+            name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
+          }
+        : null;
     } catch (error) {
       console.error('Error getting current user:', error);
       throw error;
