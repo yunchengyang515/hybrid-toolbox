@@ -1,10 +1,14 @@
-import { User } from '@/types/auth';
 import { supabase } from '@/lib/supabase';
+import { User } from '@supabase/supabase-js';
 
 export interface AuthService {
   signIn(): Promise<User | null | void>;
   signOut(): Promise<void>;
   getCurrentUser(): Promise<User | null>;
+  handleAuthCallback(): Promise<{
+    user?: User | null;
+    error?: Error | null;
+  }>;
 }
 
 export class SupabaseAuthService implements AuthService {
@@ -41,16 +45,38 @@ export class SupabaseAuthService implements AuthService {
         error,
       } = await supabase.auth.getUser();
       if (error) throw error;
-      return user
-        ? {
-            id: user.id,
-            email: user.email || '',
-            name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'User',
-          }
-        : null;
+      return user || null;
     } catch (error) {
       console.error('Error getting current user:', error);
       throw error;
+    }
+  }
+
+  /**
+   * Low-level handler for authentication callbacks from OAuth providers
+   * @returns A promise that resolves with the session data or error
+   * @private
+   */
+  async handleAuthCallback(): Promise<{ user?: User | null; error?: Error | null }> {
+    try {
+      const { error } = await supabase.auth.getSession();
+
+      // Check if we have a hash fragment from OAuth redirect
+      if (window.location.hash) {
+        // Process the OAuth callback
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+
+        if (authError) {
+          throw authError;
+        }
+
+        return { user: authData.user, error: null };
+      }
+
+      return { user: null, error: error as Error | null };
+    } catch (error) {
+      console.error('Error handling auth callback:', error);
+      return { user: null, error: error as Error | null };
     }
   }
 }
