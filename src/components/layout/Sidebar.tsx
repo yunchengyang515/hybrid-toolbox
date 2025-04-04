@@ -11,14 +11,14 @@ const routes = [
   {
     path: '/chat',
     label: 'Chat',
-    icon: MessageSquare,
+    icon: MessageSquare
   },
   {
     path: '/plan',
     label: 'Plan',
     icon: Dumbbell,
-    beta: true,
-  },
+    beta: true
+  }
 ];
 
 export function Sidebar() {
@@ -84,10 +84,7 @@ function SidebarContent() {
           <Avatar>
             <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`} />
             <AvatarFallback>
-              {user?.name
-                ?.split(' ')
-                .map(n => n[0])
-                .join('') || user?.email?.[0]?.toUpperCase()}
+              {user?.name?.split(' ').map(n => n[0]).join('') || user?.email?.[0]?.toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
@@ -95,7 +92,11 @@ function SidebarContent() {
             <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
           </div>
         </div>
-        <Button variant="outline" className="w-full justify-start gap-2" onClick={() => logout()}>
+        <Button 
+          variant="outline" 
+          className="w-full justify-start gap-2" 
+          onClick={() => logout()}
+        >
           <LogOut className="h-4 w-4" />
           Sign Out
         </Button>

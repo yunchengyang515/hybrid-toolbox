@@ -31,11 +31,14 @@ const features = [
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const { initMockSession } = useAuthStore();
+  const { isAuthenticated } = useAuthStore();
 
   const handleStart = () => {
-    initMockSession();
-    navigate('/chat');
+    if (isAuthenticated) {
+      navigate('/chat');
+    } else {
+      navigate('/login');
+    }
   };
 
   return (

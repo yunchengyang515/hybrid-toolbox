@@ -10,12 +10,45 @@ export default function PlanView() {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [plan, setPlan] = React.useState<TrainingPlan | null>(null);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (user) {
-      getCurrentPlan(user.id).then(setPlan);
+      getCurrentPlan(user.id)
+        .then(setPlan)
+        .catch(err => {
+          console.error('Error fetching plan:', err);
+          setError('Unable to load your training plan. Please try again later.');
+        });
     }
   }, [user]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="max-w-4xl mx-auto">
+          <Button
+            onClick={() => navigate('/chat')}
+            variant="ghost"
+            className="mb-8"
+          >
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Back to Chat
+          </Button>
+          
+          <div className="bg-card rounded-xl shadow-lg p-6">
+            <p className="text-destructive">{error}</p>
+            <Button
+              onClick={() => window.location.reload()}
+              className="mt-4"
+            >
+              Try Again
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!plan) {
     return (

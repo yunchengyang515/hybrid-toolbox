@@ -1,5 +1,11 @@
 import { Handler } from '@netlify/functions';
+import { createClient } from '@supabase/supabase-js';
 import { ChatResponse, TrainingPlan } from '../../src/types/chat';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+);
 
 const MOCK_PLAN: TrainingPlan = {
   id: 'mock-plan-1',
@@ -36,6 +42,19 @@ const RESPONSE_TEMPLATES = [
 ];
 
 const handler: Handler = async (event) => {
+  // Handle CORS
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+      },
+      body: ''
+    };
+  }
+
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
@@ -66,13 +85,18 @@ const handler: Handler = async (event) => {
     return {
       statusCode: 200,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
       },
       body: JSON.stringify(response)
     };
   } catch (error) {
+    console.error('Error processing chat message:', error);
     return {
       statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
       body: JSON.stringify({ error: 'Internal Server Error' })
     };
   }

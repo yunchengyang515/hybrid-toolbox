@@ -10,9 +10,8 @@ import { useAuthStore } from '@/store/auth';
 const INITIAL_MESSAGE: Message = {
   id: 'welcome',
   type: 'assistant',
-  content:
-    "Hi! I'm your personal training assistant. Tell me about your fitness goals and experience, and I'll help create a hybrid training plan that works for you.",
-  timestamp: new Date(),
+  content: "Hi! I'm your personal training assistant. Tell me about your fitness goals and experience, and I'll help create a hybrid training plan that works for you.",
+  timestamp: new Date()
 };
 
 export default function ChatInterface() {
@@ -29,7 +28,7 @@ export default function ChatInterface() {
       id: Date.now().toString(),
       type: 'user',
       content: input.trim(),
-      timestamp: new Date(),
+      timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -38,14 +37,14 @@ export default function ChatInterface() {
 
     try {
       const response = await sendChatMessage(userMessage.content);
-
+      
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
         content: response.message,
-        timestamp: new Date(),
+        timestamp: new Date()
       };
-
+      
       setMessages(prev => [...prev, aiMessage]);
 
       if (response.plan) {
@@ -53,15 +52,12 @@ export default function ChatInterface() {
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      setMessages(prev => [
-        ...prev,
-        {
-          id: Date.now().toString(),
-          type: 'assistant',
-          content: "I apologize, but I'm having trouble processing your request. Please try again.",
-          timestamp: new Date(),
-        },
-      ]);
+      setMessages(prev => [...prev, {
+        id: Date.now().toString(),
+        type: 'assistant',
+        content: "I apologize, but I'm having trouble processing your request. Please try again.",
+        timestamp: new Date()
+      }]);
     } finally {
       setIsLoading(false);
     }
@@ -80,14 +76,9 @@ export default function ChatInterface() {
                 <Avatar className="mt-1">
                   {message.type === 'user' ? (
                     <>
-                      <AvatarImage
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
-                      />
+                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`} />
                       <AvatarFallback>
-                        {user?.name
-                          ?.split(' ')
-                          .map(n => n[0])
-                          .join('') || user?.email?.[0]?.toUpperCase()}
+                        {user?.name?.split(' ').map(n => n[0]).join('') || user?.email?.[0]?.toUpperCase()}
                       </AvatarFallback>
                     </>
                   ) : (
@@ -110,19 +101,23 @@ export default function ChatInterface() {
             ))}
           </div>
         </div>
-
+        
         <div className="border-t p-4">
           <div className="flex gap-4">
             <input
               type="text"
               value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyPress={e => e.key === 'Enter' && handleSend()}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Tell me about your fitness goals..."
               className="flex-1 rounded-lg border border-input bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               disabled={isLoading}
             />
-            <Button onClick={handleSend} disabled={isLoading} size="icon">
+            <Button
+              onClick={handleSend}
+              disabled={isLoading}
+              size="icon"
+            >
               <Send className="h-5 w-5" />
             </Button>
           </div>

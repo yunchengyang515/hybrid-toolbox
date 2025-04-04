@@ -1,5 +1,11 @@
 import { Handler } from '@netlify/functions';
+import { createClient } from '@supabase/supabase-js';
 import { TrainingPlan } from '../../src/types/chat';
+
+const supabase = createClient(
+  process.env.SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+);
 
 const MOCK_PLAN: TrainingPlan = {
   id: 'mock-plan-1',
@@ -18,6 +24,19 @@ const MOCK_PLAN: TrainingPlan = {
 };
 
 const handler: Handler = async (event) => {
+  // Handle CORS
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+        'Access-Control-Allow-Methods': 'GET, OPTIONS'
+      },
+      body: ''
+    };
+  }
+
   if (event.httpMethod !== 'GET') {
     return {
       statusCode: 405,
@@ -35,6 +54,13 @@ const handler: Handler = async (event) => {
       };
     }
 
+    // In a real implementation, we would fetch the plan from Supabase
+    // const { data, error } = await supabase
+    //   .from('plans')
+    //   .select('*')
+    //   .eq('user_id', userId)
+    //   .single();
+
     const plan = {
       ...MOCK_PLAN,
       userId
@@ -43,13 +69,18 @@ const handler: Handler = async (event) => {
     return {
       statusCode: 200,
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
       },
       body: JSON.stringify(plan)
     };
   } catch (error) {
+    console.error('Error fetching plan:', error);
     return {
       statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
       body: JSON.stringify({ error: 'Internal Server Error' })
     };
   }
