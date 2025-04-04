@@ -16,7 +16,9 @@ export class SupabaseAuthService implements AuthService {
     try {
       // Use VITE_UI_BASE environment variable as the base URL
       const baseUrl = import.meta.env.VITE_UI_BASE || window.location.origin;
-      const redirectUrl = `${baseUrl}/auth/callback`;
+
+      // Safely join the URL parts to handle trailing slashes correctly
+      const redirectUrl = new URL('/auth/callback', baseUrl).toString();
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
