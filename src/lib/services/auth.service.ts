@@ -15,17 +15,14 @@ export class SupabaseAuthService implements AuthService {
   async signIn(): Promise<void> {
     try {
       // Use VITE_UI_BASE environment variable as the base URL
-      const baseUrl = import.meta.env.VITE_UI_BASE || window.location.origin;
+      const baseUrl = import.meta.env.VITE_UI_BASE;
       // Safely join the URL parts to handle trailing slashes correctly
-      const redirectUrl = new URL(
-        '/auth/callback',
-        'https://development--hybrid-toolbox.netlify.app'
-      ).toString();
-
+      const redirectUrl = new URL('/auth/callback', baseUrl).toString();
+      console.log('Redirect URL:', redirectUrl);
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `https://development--hybrid-toolbox.netlify.app/auth/callback`,
+          redirectTo: redirectUrl,
         },
       });
       console.log('Sign-in data:', data);
