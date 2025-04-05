@@ -25,7 +25,7 @@ export class SupabaseAuthService implements AuthService {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl,
+          redirectTo: `https://development--hybrid-toolbox.netlify.app/auth/callback`,
         },
       });
       console.log('Sign-in data:', data);
