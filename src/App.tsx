@@ -8,6 +8,7 @@ import ChatInterface from './pages/ChatInterface';
 import PlanView from './pages/PlanView';
 import AuthCallback from './pages/AuthCallback';
 import { supabase } from './lib/supabase';
+import { isSafeMode } from './lib/utils';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { isAuthenticated, isMockMode } = useAuthStore();
@@ -32,10 +33,17 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 };
 
 function App() {
-  const { setUser } = useAuthStore();
+  const { setUser, initSafeMode, isSafeMode: isSafeModeActive } = useAuthStore();
 
   useEffect(() => {
-    // Set up auth state listener
+    // Auto-initialize safe mode if detected
+    if (isSafeMode() && !isSafeModeActive) {
+      console.log('Safe mode detected. Initializing mock session for frontend development.');
+      initSafeMode();
+      return;
+    }
+
+    // Regular auth flow for non-safe mode
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
@@ -66,7 +74,7 @@ function App() {
     return () => {
       subscription.unsubscribe();
     };
-  }, [setUser]);
+  }, [setUser, initSafeMode, isSafeModeActive]);
 
   return (
     <BrowserRouter>

@@ -10,7 +10,11 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
     "preview": "vite preview",
-    "netlify:dev": "netlify dev"
+    "netlify:dev": "netlify dev",
+    "dev:safe": "VITE_SAFE_MODE=true vite"
+  },
+  "stackblitz": {
+    "startCommand": "npm run dev:safe"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.0.4",
