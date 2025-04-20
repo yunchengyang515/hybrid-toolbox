@@ -1,6 +1,7 @@
 import { Handler } from '@netlify/functions';
 import { createClient } from '@supabase/supabase-js';
 import { TrainingPlan } from '../../src/types/chat';
+import { validateAuth, corsHeaders, unauthorizedResponse } from '../auth-utils';
 
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
@@ -12,76 +13,87 @@ const MOCK_PLAN: TrainingPlan = {
   userId: 'mock-user-id',
   weeklySchedule: [
     { day: 'Monday', session: { type: 'run', activity: 'Easy Run', duration: '30 min' } },
-    { day: 'Tuesday', session: { type: 'strength', activity: 'Upper Body', details: 'Focus on push/pull exercises' } },
+    {
+      day: 'Tuesday',
+      session: {
+        type: 'strength',
+        activity: 'Upper Body',
+        details: 'Focus on push/pull exercises',
+      },
+    },
     { day: 'Wednesday', session: { type: 'rest', activity: 'Rest Day' } },
-    { day: 'Thursday', session: { type: 'run', activity: 'Interval Training', duration: '40 min' } },
-    { day: 'Friday', session: { type: 'strength', activity: 'Lower Body', details: 'Focus on compound movements' } },
+    {
+      day: 'Thursday',
+      session: { type: 'run', activity: 'Interval Training', duration: '40 min' },
+    },
+    {
+      day: 'Friday',
+      session: { type: 'strength', activity: 'Lower Body', details: 'Focus on compound movements' },
+    },
     { day: 'Saturday', session: { type: 'run', activity: 'Long Run', duration: '60 min' } },
-    { day: 'Sunday', session: { type: 'rest', activity: 'Rest Day' } }
+    { day: 'Sunday', session: { type: 'rest', activity: 'Rest Day' } },
   ],
   createdAt: new Date(),
-  updatedAt: new Date()
+  updatedAt: new Date(),
 };
 
-const handler: Handler = async (event) => {
+const handler: Handler = async event => {
   // Handle CORS
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS'
-      },
-      body: ''
+      headers: corsHeaders,
+      body: '',
     };
   }
 
   if (event.httpMethod !== 'GET') {
     return {
       statusCode: 405,
-      body: 'Method Not Allowed'
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
     };
+  }
+
+  // Validate authentication
+  const { user, error } = await validateAuth(event);
+  if (!user || error) {
+    console.log('Auth failed:', error);
+    return unauthorizedResponse();
   }
 
   try {
     const userId = event.queryStringParameters?.userId;
-    
-    if (!userId) {
+
+    // Security check: ensure the requested userId matches the authenticated user
+    if (userId && userId !== user.id) {
       return {
-        statusCode: 400,
-        body: JSON.stringify({ error: 'User ID is required' })
+        statusCode: 403,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: "Access denied: Cannot access another user's plan" }),
       };
     }
 
-    // In a real implementation, we would fetch the plan from Supabase
-    // const { data, error } = await supabase
-    //   .from('plans')
-    //   .select('*')
-    //   .eq('user_id', userId)
-    //   .single();
-
+    // Use the authenticated user's ID
     const plan = {
       ...MOCK_PLAN,
-      userId
+      userId: user.id,
     };
 
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        ...corsHeaders,
       },
-      body: JSON.stringify(plan)
+      body: JSON.stringify(plan),
     };
   } catch (error) {
     console.error('Error fetching plan:', error);
     return {
       statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({ error: 'Internal Server Error' })
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'Internal Server Error' }),
     };
   }
 };
