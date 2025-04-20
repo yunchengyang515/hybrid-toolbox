@@ -18,7 +18,6 @@ export class SupabaseAuthService implements AuthService {
       const baseUrl = import.meta.env.VITE_UI_BASE;
       // Safely join the URL parts to handle trailing slashes correctly
       const redirectUrl = new URL('/auth/callback', baseUrl).toString();
-      console.log('Redirect URL:', redirectUrl);
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {

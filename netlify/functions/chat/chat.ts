@@ -1,6 +1,7 @@
 import { Handler } from '@netlify/functions';
 import { createClient } from '@supabase/supabase-js';
 import { ChatResponse, TrainingPlan } from '../../src/types/chat';
+import { validateAuth, corsHeaders, unauthorizedResponse } from '../auth-utils';
 
 const supabase = createClient(
   process.env.SUPABASE_URL || '',
@@ -12,92 +13,113 @@ const MOCK_PLAN: TrainingPlan = {
   userId: 'mock-user-id',
   weeklySchedule: [
     { day: 'Monday', session: { type: 'run', activity: 'Easy Run', duration: '30 min' } },
-    { day: 'Tuesday', session: { type: 'strength', activity: 'Upper Body', details: 'Focus on push/pull exercises' } },
+    {
+      day: 'Tuesday',
+      session: {
+        type: 'strength',
+        activity: 'Upper Body',
+        details: 'Focus on push/pull exercises',
+      },
+    },
     { day: 'Wednesday', session: { type: 'rest', activity: 'Rest Day' } },
-    { day: 'Thursday', session: { type: 'run', activity: 'Interval Training', duration: '40 min' } },
-    { day: 'Friday', session: { type: 'strength', activity: 'Lower Body', details: 'Focus on compound movements' } },
+    {
+      day: 'Thursday',
+      session: { type: 'run', activity: 'Interval Training', duration: '40 min' },
+    },
+    {
+      day: 'Friday',
+      session: { type: 'strength', activity: 'Lower Body', details: 'Focus on compound movements' },
+    },
     { day: 'Saturday', session: { type: 'run', activity: 'Long Run', duration: '60 min' } },
-    { day: 'Sunday', session: { type: 'rest', activity: 'Rest Day' } }
+    { day: 'Sunday', session: { type: 'rest', activity: 'Rest Day' } },
   ],
   createdAt: new Date(),
-  updatedAt: new Date()
+  updatedAt: new Date(),
 };
 
 const RESPONSE_TEMPLATES = [
   {
     trigger: ['goal', 'goals', 'aim', 'achieve'],
-    response: "I understand your goals! Based on what you've shared, I can help create a balanced plan that combines running and strength training. Would you like to see a preview?",
-    includePlan: false
+    response:
+      "I understand your goals! Based on what you've shared, I can help create a balanced plan that combines running and strength training. Would you like to see a preview?",
+    includePlan: false,
   },
   {
     trigger: ['experience', 'background', 'history'],
-    response: "Thanks for sharing your background. This will help me tailor the plan to your experience level. Let's look at a potential weekly schedule that matches your capabilities.",
-    includePlan: true
+    response:
+      "Thanks for sharing your background. This will help me tailor the plan to your experience level. Let's look at a potential weekly schedule that matches your capabilities.",
+    includePlan: true,
   },
   {
     trigger: ['schedule', 'time', 'availability'],
-    response: "I'll make sure the plan fits your schedule. Here's a suggested weekly breakdown that should work with your availability.",
-    includePlan: true
-  }
+    response:
+      "I'll make sure the plan fits your schedule. Here's a suggested weekly breakdown that should work with your availability.",
+    includePlan: true,
+  },
 ];
 
-const handler: Handler = async (event) => {
+const handler: Handler = async event => {
   // Handle CORS
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS'
-      },
-      body: ''
+      headers: corsHeaders,
+      body: '',
     };
   }
 
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      body: 'Method Not Allowed'
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
     };
+  }
+
+  // Validate authentication
+  const { user, error } = await validateAuth(event);
+  if (!user || error) {
+    console.log('Auth failed:', error);
+    return unauthorizedResponse();
   }
 
   try {
     const { message } = JSON.parse(event.body || '{}');
-    
+
     if (!message) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: 'Message is required' })
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Message is required' }),
       };
     }
 
     const lowercaseMessage = message.toLowerCase();
-    const matchedTemplate = RESPONSE_TEMPLATES.find(template =>
-      template.trigger.some(t => lowercaseMessage.includes(t))
-    ) || RESPONSE_TEMPLATES[0];
+    const matchedTemplate =
+      RESPONSE_TEMPLATES.find(template =>
+        template.trigger.some(t => lowercaseMessage.includes(t))
+      ) || RESPONSE_TEMPLATES[0];
 
+    // Use the authenticated user's ID for the plan
     const response: ChatResponse = {
       message: matchedTemplate.response,
-      plan: matchedTemplate.includePlan ? MOCK_PLAN : null
+      plan: matchedTemplate.includePlan ? { ...MOCK_PLAN, userId: user.id } : null,
     };
 
     return {
       statusCode: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
+        ...corsHeaders,
       },
-      body: JSON.stringify(response)
+      body: JSON.stringify(response),
     };
   } catch (error) {
     console.error('Error processing chat message:', error);
     return {
       statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*'
-      },
-      body: JSON.stringify({ error: 'Internal Server Error' })
+      headers: corsHeaders,
+      body: JSON.stringify({ error: 'Internal Server Error' }),
     };
   }
 };
