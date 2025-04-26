@@ -10,8 +10,9 @@ import { Card, CardContent } from '@/components/ui/card';
 const INITIAL_MESSAGE: Message = {
   id: 'welcome',
   type: 'assistant',
-  content: "Hi! I'm your AI training assistant. Tell me about your fitness goals and experience, and I'll provide personalized guidance on combining running and strength training effectively.",
-  timestamp: new Date()
+  content:
+    "Hi! I'm your AI training assistant. Tell me about your fitness goals and experience, and I'll provide personalized guidance on combining running and strength training effectively.",
+  timestamp: new Date(),
 };
 
 export default function CreatePlan() {
@@ -27,7 +28,7 @@ export default function CreatePlan() {
       id: Date.now().toString(),
       type: 'user',
       content: input.trim(),
-      timestamp: new Date()
+      timestamp: new Date(),
     };
 
     setMessages(prev => [...prev, userMessage]);
@@ -35,24 +36,47 @@ export default function CreatePlan() {
     setIsLoading(true);
 
     try {
-      const response = await sendChatMessage(userMessage.content);
-      
+      // Create conversation history from previous messages
+      const conversationHistory = messages
+        .filter(msg => msg.id !== 'welcome') // Skip the welcome message
+        .map(msg => ({
+          role: msg.type,
+          content: msg.content,
+        }));
+
+      // Call the serverless function
+      const response = await sendChatMessage(input.trim(), conversationHistory);
+
+      // Add AI response to messages
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: response.message,
-        timestamp: new Date()
+        content: response.message || "I've processed your request.",
+        timestamp: new Date(),
       };
-      
+
       setMessages(prev => [...prev, aiMessage]);
+
+      // Log the plan data for debugging
+      if (response.plan) {
+        console.log('Plan received:', response.plan);
+      }
+
+      // Log the status for debugging
+      if (response.status) {
+        console.log('Response status:', response.status);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
-      setMessages(prev => [...prev, {
-        id: Date.now().toString(),
-        type: 'assistant',
-        content: "I apologize, but I'm having trouble processing your request. Please try again.",
-        timestamp: new Date()
-      }]);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: Date.now().toString(),
+          type: 'assistant',
+          content: "I apologize, but I'm having trouble processing your request. Please try again.",
+          timestamp: new Date(),
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -74,8 +98,9 @@ export default function CreatePlan() {
               <Info className="w-5 h-5 text-blue-500 flex-shrink-0 mt-1" />
               <div>
                 <p className="text-sm text-blue-800">
-                  Our AI assistant provides personalized guidance and recommendations based on your goals and experience. 
-                  Share your fitness goals, current routine, and preferences to receive expert advice on:
+                  Our AI assistant provides personalized guidance and recommendations based on your
+                  goals and experience. Share your fitness goals, current routine, and preferences
+                  to receive expert advice on:
                 </p>
                 <ul className="text-sm text-blue-800 mt-2 list-disc list-inside">
                   <li>Balancing running and strength training</li>
@@ -97,9 +122,14 @@ export default function CreatePlan() {
                 <Avatar className="mt-1">
                   {message.type === 'user' ? (
                     <>
-                      <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`} />
+                      <AvatarImage
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.email}`}
+                      />
                       <AvatarFallback>
-                        {user?.name?.split(' ').map(n => n[0]).join('') || user?.email?.[0]?.toUpperCase()}
+                        {user?.name
+                          ?.split(' ')
+                          .map(n => n[0])
+                          .join('') || user?.email?.[0]?.toUpperCase()}
                       </AvatarFallback>
                     </>
                   ) : (
@@ -122,24 +152,24 @@ export default function CreatePlan() {
             ))}
           </div>
         </div>
-        
+
         <div className="border-t p-4">
           <div className="flex gap-4">
             <input
               type="text"
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+              onChange={e => setInput(e.target.value)}
+              onKeyPress={e => e.key === 'Enter' && !isLoading && handleSend()}
               placeholder="Ask about training, recovery, or progression..."
               className="flex-1 rounded-lg border border-input bg-background px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               disabled={isLoading}
             />
-            <Button
-              onClick={handleSend}
-              disabled={isLoading}
-              size="icon"
-            >
-              <Send className="h-5 w-5" />
+            <Button onClick={handleSend} disabled={isLoading} size="icon" aria-label="Send message">
+              {isLoading ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
             </Button>
           </div>
         </div>
