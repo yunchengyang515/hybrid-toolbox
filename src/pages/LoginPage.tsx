@@ -13,12 +13,12 @@ export default function LoginPage() {
   // If in safe mode and not authenticated, initialize mock session
   if (isSafeMode() && !isAuthenticated) {
     initMockSession();
-    return <Navigate to="/chat" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
-  // If already authenticated, redirect to chat
+  // If already authenticated, redirect to dashboard
   if (isAuthenticated) {
-    return <Navigate to="/chat" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleLogin = async () => {
@@ -32,7 +32,7 @@ export default function LoginPage() {
     } else {
       // Mock mode
       initMockSession();
-      navigate('/chat');
+      navigate('/dashboard');
     }
   };
 

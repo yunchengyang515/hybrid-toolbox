@@ -4,8 +4,9 @@ import { useAuthStore } from './store/auth';
 import { Sidebar } from './components/layout/Sidebar';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
-import ChatInterface from './pages/ChatInterface';
-import PlanView from './pages/PlanView';
+import Dashboard from './pages/Dashboard';
+import CreatePlan from './pages/CreatePlan';
+import MyPlans from './pages/MyPlans';
 import AuthCallback from './pages/AuthCallback';
 import { supabase } from './lib/supabase';
 import { isSafeMode } from './lib/utils';
@@ -25,9 +26,9 @@ const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const showSidebar = isAuthenticated || isMockMode;
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background">
       {showSidebar && <Sidebar />}
-      <main className="flex-1">{children}</main>
+      <main className="lg:ml-64">{children}</main>
     </div>
   );
 };
@@ -83,21 +84,31 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route
-          path="/chat"
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <AppLayout>
-                <ChatInterface />
+                <Dashboard />
               </AppLayout>
             </ProtectedRoute>
           }
         />
         <Route
-          path="/plan"
+          path="/create-plan"
           element={
             <ProtectedRoute>
               <AppLayout>
-                <PlanView />
+                <CreatePlan />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-plans"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <MyPlans />
               </AppLayout>
             </ProtectedRoute>
           }
