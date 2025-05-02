@@ -14,7 +14,8 @@ async function getAuthToken(): Promise<string | null> {
 
 export async function sendChatMessage(
   message: string,
-  conversationHistory: ConversationHistoryItem[] = []
+  conversationHistory: ConversationHistoryItem[] = [],
+  planParameters = { duration_weeks: 4, emphasis: 'balanced' }
 ): Promise<ChatResponse> {
   try {
     const token = await getAuthToken();
@@ -23,7 +24,12 @@ export async function sendChatMessage(
       throw new Error('Not authenticated');
     }
 
-    console.log('Sending message to API:', { message, conversation_history: conversationHistory });
+    // Log the request data
+    console.log('Sending message to API:', {
+      message,
+      conversation_history: conversationHistory,
+      plan_parameters: planParameters,
+    });
 
     const response = await fetch(`${API_URL}/chat`, {
       method: 'POST',
@@ -34,6 +40,7 @@ export async function sendChatMessage(
       body: JSON.stringify({
         message,
         conversation_history: conversationHistory,
+        plan_parameters: planParameters,
       }),
     });
 

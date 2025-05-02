@@ -16,7 +16,14 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    /* Paths for Netlify functions to access shared types */
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "types/*": ["types/*"]
+    }
   },
-  "include": ["vite.config.ts"]
+  "include": ["vite.config.ts", "netlify/functions/**/*.ts", "types/**/*.ts"]
 }

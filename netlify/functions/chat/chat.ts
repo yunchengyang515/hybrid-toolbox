@@ -1,7 +1,6 @@
 import { Handler } from '@netlify/functions';
-import { createClient } from '@supabase/supabase-js';
-import { ChatResponse, TrainingPlan } from '../../src/types/chat';
 import { validateAuth, corsHeaders, unauthorizedResponse } from '../auth-utils';
+import { ChatResponse, TrainingPlan } from '../../../types/shared';
 
 const MOCK_PLAN: TrainingPlan = {
   id: 'mock-plan-1',
@@ -32,26 +31,6 @@ const MOCK_PLAN: TrainingPlan = {
   updatedAt: new Date(),
 };
 
-// Simple mock keyword triggers
-const KEYWORDS = {
-  plan: ['plan', 'schedule', 'program', 'routine'],
-  goals: ['goal', 'improve', 'better', 'faster', 'stronger'],
-  experience: ['experience', 'history', 'background', 'years', 'month'],
-  equipment: ['equipment', 'gym', 'dumbbell', 'barbell', 'machine'],
-  schedule: [
-    'monday',
-    'tuesday',
-    'wednesday',
-    'thursday',
-    'friday',
-    'saturday',
-    'sunday',
-    'weekend',
-    'weekday',
-  ],
-  constraints: ['injury', 'pain', 'issue', 'problem', 'hurt', 'sore'],
-};
-
 const handler: Handler = async event => {
   // Handle CORS
   if (event.httpMethod === 'OPTIONS') {
@@ -78,7 +57,12 @@ const handler: Handler = async event => {
   }
 
   try {
-    const { message, conversation_history = [] } = JSON.parse(event.body || '{}');
+    // Extract data from the request body according to the API documentation
+    const {
+      message,
+      conversation_history = [],
+      plan_parameters = {},
+    } = JSON.parse(event.body || '{}');
 
     console.log('Received message:', message);
     console.log('Conversation history:', conversation_history);
@@ -91,21 +75,30 @@ const handler: Handler = async event => {
       };
     }
 
+    // Prepare request to the external planning API
+    // In a real implementation, this would call the actual API endpoint
+    // For now, we'll simulate the API responses
+
+    // Set default plan parameters if not provided
+    const planParameters = {
+      duration_weeks: plan_parameters.duration_weeks || 4,
+      emphasis: plan_parameters.emphasis || 'balanced',
+    };
+
+    // Format the API request according to the documentation
+    const apiRequest = {
+      user_input: message,
+      plan_parameters: planParameters,
+      conversation_history,
+    };
+
+    console.log('Prepared API request:', apiRequest);
+
     // For the MVP we'll use simple keyword detection instead of real NLP
-    // To mock the profile-building conversation flow
+    // To mock the external API responses based on conversation length
     const lowerMessage = message.toLowerCase();
 
-    // Count how many keyword categories are mentioned in the entire conversation
-    const conversationText = [message, ...conversation_history.map(item => item.content)]
-      .join(' ')
-      .toLowerCase();
-
-    let keywordMatches = 0;
-    for (const category in KEYWORDS) {
-      if (KEYWORDS[category].some(keyword => conversationText.includes(keyword))) {
-        keywordMatches++;
-      }
-    }
+    // Mock responses based on conversation history length to simulate the API
 
     // First response - incomplete profile
     if (conversation_history.length === 0) {
@@ -170,7 +163,16 @@ const handler: Handler = async event => {
     const response: ChatResponse = {
       status: 'complete',
       message:
-        "Perfect! Based on everything you've shared, I've created a personalized 4-week hybrid training plan that combines running and strength training. This plan is designed to help you reach your goals while accounting for your schedule and experience level. You can view and follow your new plan in the 'My Plans' section.",
+        "Perfect! Based on everything you've shared, I've created a personalized " +
+        planParameters.duration_weeks +
+        '-week hybrid training plan that combines running and strength training. ' +
+        'This plan is ' +
+        (planParameters.emphasis === 'balanced'
+          ? 'balanced between running and strength training'
+          : planParameters.emphasis === 'running'
+            ? 'focused more on running performance'
+            : 'focused more on strength development') +
+        ". You can view and follow your new plan in the 'My Plans' section.",
       profile_data: {
         training_goals: 'Goals extracted from conversation',
         weekly_schedule: 'Schedule information confirmed',
@@ -186,7 +188,15 @@ const handler: Handler = async event => {
       plan: {
         ...MOCK_PLAN,
         userId: user.id,
+        title: `${planParameters.duration_weeks}-Week ${planParameters.emphasis.charAt(0).toUpperCase() + planParameters.emphasis.slice(1)} Hybrid Training Plan`,
+        description: `A ${planParameters.emphasis} training program designed based on your fitness profile and goals.`,
       },
+      recommendations: [
+        'Stay hydrated throughout your training sessions',
+        'Focus on proper nutrition for recovery',
+        'Get 7-8 hours of sleep for optimal recovery',
+      ],
+      guidelines: `This ${planParameters.duration_weeks}-week plan is designed to help you progress steadily. Follow the running schedule closely and adjust weights for strength training as needed. Rest days are crucial for recovery - don't skip them!`,
     };
 
     return {

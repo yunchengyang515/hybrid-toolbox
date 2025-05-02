@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Send, Info } from 'lucide-react';
-import { Message } from '@/types/chat';
+import { Message, ConversationHistoryItem, PlanParameters } from '@/types/chat';
 import { sendChatMessage } from '@/lib/chat';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -15,10 +15,17 @@ const INITIAL_MESSAGE: Message = {
   timestamp: new Date(),
 };
 
+// Default plan parameters according to the API documentation
+const DEFAULT_PLAN_PARAMETERS: PlanParameters = {
+  duration_weeks: 4,
+  emphasis: 'balanced',
+};
+
 export default function CreatePlan() {
   const [messages, setMessages] = useState<Message[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [planParameters] = useState<PlanParameters>(DEFAULT_PLAN_PARAMETERS);
   const { user } = useAuthStore();
 
   const handleSend = async () => {
@@ -36,35 +43,35 @@ export default function CreatePlan() {
     setIsLoading(true);
 
     try {
-      // Create conversation history from previous messages
-      const conversationHistory = messages
-        .filter(msg => msg.id !== 'welcome') // Skip the welcome message
+      // Convert chat messages to conversation history format required by the API
+      const conversationHistory: ConversationHistoryItem[] = messages
+        .filter(msg => msg.id !== 'welcome')
         .map(msg => ({
           role: msg.type,
           content: msg.content,
         }));
 
-      // Call the serverless function
-      const response = await sendChatMessage(input.trim(), conversationHistory);
+      // Call the API with the message, conversation history, and plan parameters
+      const response = await sendChatMessage(input.trim(), conversationHistory, planParameters);
 
-      // Add AI response to messages
       const aiMessage: Message = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: response.message || "I've processed your request.",
+        content: response.message,
         timestamp: new Date(),
       };
 
       setMessages(prev => [...prev, aiMessage]);
 
-      // Log the plan data for debugging
-      if (response.plan) {
-        console.log('Plan received:', response.plan);
-      }
-
-      // Log the status for debugging
+      // Log response data for debugging
       if (response.status) {
         console.log('Response status:', response.status);
+      }
+      if (response.plan) {
+        console.log('Plan generated:', response.plan);
+      }
+      if (response.missing_fields && response.missing_fields.length > 0) {
+        console.log('Missing fields:', response.missing_fields);
       }
     } catch (error) {
       console.error('Error sending message:', error);

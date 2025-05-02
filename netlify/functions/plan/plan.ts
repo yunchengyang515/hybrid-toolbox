@@ -1,12 +1,6 @@
 import { Handler } from '@netlify/functions';
-import { createClient } from '@supabase/supabase-js';
-import { TrainingPlan } from '../../src/types/chat';
+import { TrainingPlan } from '../../../types/shared';
 import { validateAuth, corsHeaders, unauthorizedResponse } from '../auth-utils';
-
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
 
 const MOCK_PLAN: TrainingPlan = {
   id: 'mock-plan-1',

@@ -9,3 +9,6 @@ export interface AuthState {
   isAuthenticated: boolean;
   isMockMode: boolean;
 }
+
+// Re-export auth-related types from shared types
+export * from '../shared/types';
