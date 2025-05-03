@@ -31,6 +31,7 @@ export async function sendChatMessage(
       plan_parameters: planParameters,
     });
 
+    // Use Netlify function to handle the request
     const response = await fetch(`${API_URL}/chat`, {
       method: 'POST',
       headers: {
