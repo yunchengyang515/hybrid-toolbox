@@ -35,7 +35,7 @@ export default function LandingPage() {
 
   const handleStart = () => {
     if (isAuthenticated) {
-      navigate('/chat');
+      navigate('/dashboard');
     } else {
       navigate('/login');
     }

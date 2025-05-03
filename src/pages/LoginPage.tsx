@@ -1,11 +1,25 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Navigate } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { SupabaseAuthService } from '@/lib/services/auth.service';
+import { useAuthStore } from '@/store/auth';
+import { isSafeMode } from '@/lib/utils';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, initMockSession } = useAuthStore();
+
+  // If in safe mode and not authenticated, initialize mock session
+  if (isSafeMode() && !isAuthenticated) {
+    initMockSession();
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // If already authenticated, redirect to dashboard
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   const handleLogin = async () => {
     const authService = new SupabaseAuthService();
@@ -17,7 +31,8 @@ export default function LoginPage() {
       }
     } else {
       // Mock mode
-      navigate('/chat');
+      initMockSession();
+      navigate('/dashboard');
     }
   };
 

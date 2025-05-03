@@ -1,62 +1,8 @@
 import { Handler } from '@netlify/functions';
-import { createClient } from '@supabase/supabase-js';
-import { ChatResponse, TrainingPlan } from '../../src/types/chat';
 import { validateAuth, corsHeaders, unauthorizedResponse } from '../auth-utils';
+import { createAgentService } from '../services/agent.service';
 
-const supabase = createClient(
-  process.env.SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-);
-
-const MOCK_PLAN: TrainingPlan = {
-  id: 'mock-plan-1',
-  userId: 'mock-user-id',
-  weeklySchedule: [
-    { day: 'Monday', session: { type: 'run', activity: 'Easy Run', duration: '30 min' } },
-    {
-      day: 'Tuesday',
-      session: {
-        type: 'strength',
-        activity: 'Upper Body',
-        details: 'Focus on push/pull exercises',
-      },
-    },
-    { day: 'Wednesday', session: { type: 'rest', activity: 'Rest Day' } },
-    {
-      day: 'Thursday',
-      session: { type: 'run', activity: 'Interval Training', duration: '40 min' },
-    },
-    {
-      day: 'Friday',
-      session: { type: 'strength', activity: 'Lower Body', details: 'Focus on compound movements' },
-    },
-    { day: 'Saturday', session: { type: 'run', activity: 'Long Run', duration: '60 min' } },
-    { day: 'Sunday', session: { type: 'rest', activity: 'Rest Day' } },
-  ],
-  createdAt: new Date(),
-  updatedAt: new Date(),
-};
-
-const RESPONSE_TEMPLATES = [
-  {
-    trigger: ['goal', 'goals', 'aim', 'achieve'],
-    response:
-      "I understand your goals! Based on what you've shared, I can help create a balanced plan that combines running and strength training. Would you like to see a preview?",
-    includePlan: false,
-  },
-  {
-    trigger: ['experience', 'background', 'history'],
-    response:
-      "Thanks for sharing your background. This will help me tailor the plan to your experience level. Let's look at a potential weekly schedule that matches your capabilities.",
-    includePlan: true,
-  },
-  {
-    trigger: ['schedule', 'time', 'availability'],
-    response:
-      "I'll make sure the plan fits your schedule. Here's a suggested weekly breakdown that should work with your availability.",
-    includePlan: true,
-  },
-];
+// Only keep this for fallback in case the API fails
 
 const handler: Handler = async event => {
   // Handle CORS
@@ -84,7 +30,15 @@ const handler: Handler = async event => {
   }
 
   try {
-    const { message } = JSON.parse(event.body || '{}');
+    // Extract data from the request body according to the API documentation
+    const {
+      message,
+      conversation_history = [],
+      plan_parameters = {},
+    } = JSON.parse(event.body || '{}');
+
+    console.log('Received message:', message);
+    console.log('Conversation history:', conversation_history);
 
     if (!message) {
       return {
@@ -94,26 +48,68 @@ const handler: Handler = async event => {
       };
     }
 
-    const lowercaseMessage = message.toLowerCase();
-    const matchedTemplate =
-      RESPONSE_TEMPLATES.find(template =>
-        template.trigger.some(t => lowercaseMessage.includes(t))
-      ) || RESPONSE_TEMPLATES[0];
-
-    // Use the authenticated user's ID for the plan
-    const response: ChatResponse = {
-      message: matchedTemplate.response,
-      plan: matchedTemplate.includePlan ? { ...MOCK_PLAN, userId: user.id } : null,
+    // Set default plan parameters if not provided
+    const planParameters = {
+      duration_weeks: plan_parameters.duration_weeks || 4,
+      emphasis: plan_parameters.emphasis || 'balanced',
     };
 
-    return {
-      statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        ...corsHeaders,
-      },
-      body: JSON.stringify(response),
+    // Format the API request according to the documentation
+    const apiRequest = {
+      user_input: message,
+      plan_parameters: planParameters,
+      conversation_history,
     };
+
+    // Check for required environment variables
+    const apiUrl = process.env.AGENT_API_URL;
+    const apiKey = process.env.AGENT_API_KEY;
+    const apiVersion = process.env.AGENT_API_VERSION;
+
+    if (!apiUrl || !apiKey || !apiVersion) {
+      console.error('Missing required environment variables: AGENT_API_URL or AGENT_API_KEY');
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Server configuration error' }),
+      };
+    }
+
+    try {
+      // Create agent service
+      const agentService = createAgentService(apiUrl, apiKey, apiVersion);
+
+      // Call the planning API through our agent service
+      const planningResponse = await agentService.generatePlan(apiRequest);
+      console.log(
+        'Received API response:',
+        JSON.stringify(planningResponse).substring(0, 200) + '...'
+      );
+
+      // If we have a complete plan response, add the user ID to the plan
+      if (planningResponse.status === 'complete' && planningResponse.plan) {
+        planningResponse.plan.userId = user.id;
+      }
+
+      // Format the response using the service helper
+      const formattedResponse = agentService.formatChatResponse(planningResponse);
+
+      return {
+        statusCode: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders,
+        },
+        body: JSON.stringify(formattedResponse),
+      };
+    } catch (apiError) {
+      console.error('Error calling external API:', apiError);
+      return {
+        statusCode: 500,
+        headers: corsHeaders,
+        body: JSON.stringify({ error: 'Failed to communicate with planning service' }),
+      };
+    }
   } catch (error) {
     console.error('Error processing chat message:', error);
     return {

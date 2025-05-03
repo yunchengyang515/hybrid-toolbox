@@ -62,8 +62,8 @@ const AuthCallback: React.FC = () => {
     );
   }
 
-  // Redirect to the chat page on successful authentication
-  return <Navigate to="/chat" replace />;
+  // Redirect to the dashboard page on successful authentication
+  return <Navigate to="/dashboard" replace />;
 };
 
 export default AuthCallback;
