@@ -37,15 +37,21 @@ export interface AgentPlanningRequest {
 export class AgentService {
   private readonly apiUrl: string;
   private readonly apiKey: string;
+  private readonly apiVersion: string;
+  private readonly fullUrl: string;
+  private readonly planningUrl: string;
 
   /**
    * Creates a new AgentService instance
    * @param apiUrl The URL of the Planning API
    * @param apiKey The API key for authentication
    */
-  constructor(apiUrl: string, apiKey: string) {
+  constructor(apiUrl: string, apiKey: string, apiVersion: string) {
     this.apiUrl = apiUrl;
     this.apiKey = apiKey;
+    this.apiVersion = apiVersion;
+    this.fullUrl = new URL(`${this.apiVersion}`, this.apiUrl).toString();
+    this.planningUrl = new URL('planning', this.fullUrl).toString();
   }
 
   /**
@@ -53,8 +59,9 @@ export class AgentService {
    * @param request The planning request object
    */
   async generatePlan(request: AgentPlanningRequest): Promise<AgentPlanningResponse> {
+    const url = new URL('generate-plan-mvp', this.planningUrl).toString();
     try {
-      const response = await fetch(this.apiUrl, {
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -106,10 +113,14 @@ export class AgentService {
  * @param apiUrl API URL for the planning service
  * @param apiKey API key for the planning service
  */
-export function createAgentService(apiUrl: string, apiKey: string): AgentService {
+export function createAgentService(
+  apiUrl: string,
+  apiKey: string,
+  apiVersion: string
+): AgentService {
   if (!apiUrl || !apiKey) {
     throw new Error('Missing required parameters: apiUrl or apiKey');
   }
 
-  return new AgentService(apiUrl, apiKey);
+  return new AgentService(apiUrl, apiKey, apiVersion);
 }

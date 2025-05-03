@@ -62,11 +62,12 @@ const handler: Handler = async event => {
     };
 
     // Check for required environment variables
-    const apiUrl = process.env.PLANNING_API_URL;
-    const apiKey = process.env.PLANNING_API_KEY;
+    const apiUrl = process.env.AGENT_API_URL;
+    const apiKey = process.env.AGENT_API_KEY;
+    const apiVersion = process.env.AGENT_API_VERSION;
 
-    if (!apiUrl || !apiKey) {
-      console.error('Missing required environment variables: PLANNING_API_URL or PLANNING_API_KEY');
+    if (!apiUrl || !apiKey || !apiVersion) {
+      console.error('Missing required environment variables: AGENT_API_URL or AGENT_API_KEY');
       return {
         statusCode: 500,
         headers: corsHeaders,
@@ -76,7 +77,7 @@ const handler: Handler = async event => {
 
     try {
       // Create agent service
-      const agentService = createAgentService(apiUrl, apiKey);
+      const agentService = createAgentService(apiUrl, apiKey, apiVersion);
 
       // Call the planning API through our agent service
       const planningResponse = await agentService.generatePlan(apiRequest);
