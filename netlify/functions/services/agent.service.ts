@@ -1,3 +1,4 @@
+import path from 'path';
 import { ChatResponse, ConversationHistoryItem, PlanParameters } from '../../../types/shared';
 
 /**
@@ -51,7 +52,7 @@ export class AgentService {
     this.apiKey = apiKey;
     this.apiVersion = apiVersion;
     this.fullUrl = new URL(`${this.apiVersion}`, this.apiUrl).toString();
-    this.planningUrl = new URL('planning', this.fullUrl).toString();
+    this.planningUrl = path.join(this.fullUrl, 'planning');
   }
 
   /**
@@ -59,13 +60,17 @@ export class AgentService {
    * @param request The planning request object
    */
   async generatePlan(request: AgentPlanningRequest): Promise<AgentPlanningResponse> {
-    const url = new URL('generate-plan-mvp', this.planningUrl).toString();
+    const url = path.join(this.planningUrl, 'generate-plan-mvp');
+    console.log('sending request to planning API:', {
+      url,
+      request,
+    });
     try {
       const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${this.apiKey}`,
+          'X-API-Key': `${this.apiKey}`,
         },
         body: JSON.stringify(request),
       });
@@ -95,6 +100,7 @@ export class AgentService {
    * @param response The API response to format
    */
   formatChatResponse(response: AgentPlanningResponse): ChatResponse {
+    console.log('Formatting API response:', response);
     return {
       status: response.status,
       message: response.message || response.guidelines || '',
