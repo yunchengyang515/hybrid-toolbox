@@ -101,9 +101,33 @@ export class AgentService {
    */
   formatChatResponse(response: AgentPlanningResponse): ChatResponse {
     console.log('Formatting API response:', response);
+
+    // Generate a default message based on available data when message and guidelines are empty
+    let defaultMessage = '';
+
+    if (
+      response.status === 'incomplete_profile' &&
+      (!response.message || response.message.trim() === '')
+    ) {
+      // If we have follow-up questions, use the first one as the message
+      if (response.follow_up_questions && response.follow_up_questions.length > 0) {
+        defaultMessage = response.follow_up_questions[0];
+      } else {
+        // Fallback message if no follow-up questions are available
+        defaultMessage =
+          'I need some more information to create your personalized training plan. Could you provide more details about your fitness goals and experience?';
+      }
+    } else if (response.status === 'complete' && !response.message && !response.guidelines) {
+      // Fallback message for complete status but no message content
+      defaultMessage = 'Your personalized training plan is ready! Check out the details below.';
+    }
+
+    // Use the actual message, guidelines, or our generated default
+    const messageContent = response.message || response.guidelines || defaultMessage;
+
     return {
       status: response.status,
-      message: response.message || response.guidelines || '',
+      message: messageContent,
       profile_data: response.profile_data,
       missing_fields: response.missing_fields,
       follow_up_questions: response.follow_up_questions,
